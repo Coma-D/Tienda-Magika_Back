@@ -1,0 +1,432 @@
+openapi: 3.0.0
+info:
+  title: Tienda Magika API
+  version: 1.0.0
+  description: API para la gestión de usuarios, catálogo y soporte.
+servers:
+  - url: /api/v1
+paths:
+  # --- AUTENTICACIÓN Y USUARIOS ---
+  /auth/register:
+    post:
+      operationId: src.controllers.register_user
+      tags: [Auth]
+      summary: Registra un nuevo usuario
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { name: { type: string }, username: { type: string }, email: { type: string }, password: { type: string } } }
+        required: true
+      responses: { '201': { description: Registro exitoso }, '409': { description: Usuario o email ya existe } }
+
+  /auth/login:
+    post:
+      operationId: src.controllers.login_user
+      tags: [Auth]
+      summary: Inicia sesión
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { emailOrUsername: { type: string }, password: { type: string } } }
+        required: true
+      responses: { '200': { description: Login exitoso }, '401': { description: Credenciales inválidas } }
+
+  /auth/change-password:
+    post:
+      operationId: src.controllers.change_password
+      tags: [Auth]
+      summary: Cambia la contraseña de un usuario
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { userId: { type: string }, currentPassword: { type: string }, newPassword: { type: string } } }
+        required: true
+      responses: { '200': { description: Contraseña actualizada }, '401': { description: Contraseña actual incorrecta } }
+
+  /users:
+    get:
+      operationId: src.controllers.get_all_users
+      tags: [Users]
+      summary: Obtiene la lista de todos los usuarios (para Comunidad)
+      responses: { '200': { description: Lista de usuarios } }
+
+  /users/{user_id}: 
+    delete:
+      operationId: src.controllers.delete_user
+      tags: [Users]
+      summary: Elimina un usuario por ID y todos sus datos asociados (solo para administradores)
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: admin_id
+          in: query
+          required: true
+          schema: { type: string }
+          description: ID del usuario que solicita la eliminación (debe ser admin)
+      responses:
+        '200': { description: Usuario eliminado }
+        '403': { description: No autorizado (No es admin) }
+        '404': { description: Usuario no encontrado }
+
+  # --- GESTIÓN DEL CARRITO ---
+  /cart/{user_id}:
+    get:
+      operationId: src.controllers.get_user_cart
+      tags: [Cart]
+      summary: Obtiene el carrito de compras persistente para un usuario.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Lista de ítems del carrito } }
+      
+  /cart/add:
+    post:
+      operationId: src.controllers.add_item_to_cart
+      tags: [Cart]
+      summary: Agrega, incrementa o actualiza un ítem en el carrito.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { userId: { type: string }, card: { type: object }, quantity: { type: integer }, source: { type: string } } }
+        required: true
+      responses: { '200': { description: Carrito actualizado } }
+
+  /cart/remove:
+    post:
+      operationId: src.controllers.remove_item_from_cart
+      tags: [Cart]
+      summary: Elimina un ítem o actualiza la cantidad de un ítem en el carrito.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { userId: { type: string }, cardId: { type: string }, quantity: { type: integer } } }
+        required: true
+      responses: { '200': { description: Carrito actualizado } }
+
+  # --- GESTIÓN DE COLECCIONES ---
+  /collection/{user_id}:
+    get:
+      operationId: src.controllers.get_user_collection
+      tags: [Collection]
+      summary: Obtiene la colección de cartas privada y única para un usuario.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Lista de cartas en la colección } }
+      
+  # --- MODIFICACIÓN DE COLECCIÓN ---
+  /collection/add-or-update:
+    post:
+      operationId: src.controllers.add_or_update_collection_card
+      tags: [Collection]
+      summary: Añade o actualiza la cantidad de una carta en la colección del usuario.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { userId: { type: string }, card: { type: object }, source: { type: string }, quantity: { type: integer } } }
+        required: true
+      responses: 
+        '200': { description: Cantidad de carta actualizada o añadida }
+        '400': { description: ID de usuario y carta requeridos }
+
+  /collection/remove-quantity:
+    post:
+      operationId: src.controllers.remove_quantity_from_collection_card
+      tags: [Collection]
+      summary: Remueve una cantidad específica de una carta o la elimina completamente si la cantidad llega a cero.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { userId: { type: string }, cardId: { type: string, description: ID de instancia único de la carta }, quantityToRemove: { type: integer } } }
+        required: true
+      responses: 
+        '200': { description: Cantidad de carta reducida o instancia eliminada }
+        '400': { description: ID de usuario y carta requeridos }
+        
+  /collection/update-card:
+    post:
+      operationId: src.controllers.update_collection_card_metadata
+      tags: [Collection]
+      summary: Actualiza los metadatos de una carta específica en la colección (ej. condición, comentarios).
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { userId: { type: string }, updatedCard: { type: object, description: Objeto CollectionCard con ID de instancia único } } }
+        required: true
+      responses: 
+        '200': { description: Metadatos de la carta actualizados }
+        '400': { description: Datos incompletos }
+        
+  /collection/toggle-favorite:
+    post:
+      operationId: src.controllers.toggle_favorite_card
+      tags: [Collection]
+      summary: Alterna el estado de favorito de una carta en la colección.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { userId: { type: string }, cardId: { type: string, description: ID de instancia único de la carta } } }
+        required: true
+      responses: 
+        '200': { description: Estado de favorito actualizado }
+        '400': { description: ID de usuario y carta requeridos }
+      
+  # --- COMUNIDAD Y CHAT ---
+  /community/messages:
+    get:
+      operationId: src.controllers.get_all_messages
+      tags: [Community]
+      summary: Obtiene todos los mensajes (públicos y privados del usuario)
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Lista de mensajes } }
+    post:
+      operationId: src.controllers.send_message
+      tags: [Community]
+      summary: Envía un nuevo mensaje (público o privado)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+        required: true
+      responses: { '201': { description: Mensaje enviado } }
+      
+  /community/block:
+    post:
+      operationId: src.controllers.toggle_block
+      tags: [Community]
+      summary: Bloquea/desbloquea a un usuario.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { blockerId: { type: string }, targetId: { type: string } } }
+      responses: { '200': { description: Estado de bloqueo actualizado } }
+
+  /community/ban:
+    post:
+      operationId: src.controllers.toggle_ban
+      tags: [Community]
+      summary: Banea/desbanea a un usuario (solo para administradores)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { adminId: { type: string }, targetId: { type: string }, durationMinutes: { type: integer } } }
+      responses: 
+        '200': { description: Estado de baneo actualizado }
+        '403': { description: No autorizado }
+  
+  /community/bans:
+    get:
+      operationId: src.controllers.get_bans_and_blocks
+      tags: [Community]
+      summary: Obtiene la lista de usuarios baneados y bloqueados
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: Listas de control de moderación } }
+
+  # --- TRANSACCIONES ---
+  /marketplace/checkout:
+    post:
+      operationId: src.controllers.complete_checkout
+      tags: [Marketplace]
+      summary: Procesa el pago y transfiere las cartas de los listings a la colección del usuario.
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { userId: { type: string }, purchasedItems: { type: array, items: { type: object } } } }
+        required: true
+      responses: { '200': { description: Transacción exitosa. Retorna listings remanentes. }, '400': { description: Error de inventario o datos. } }
+
+  # 🌟 RUTA DE COMPATIBILIDAD RESTAURADA para el frontend: /cards/catalog
+  /cards/catalog:
+    get:
+      operationId: src.controllers.get_all_cards
+      tags: [Cards]
+      summary: Obtiene el catálogo completo de cartas (Ruta de compatibilidad para frontend).
+      responses:
+        '200':
+          description: Lista de cartas del catálogo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Card"
+
+  # --- CATÁLOGO DE CARTAS (RUTA PRINCIPAL Y POST) ---
+  /cards:
+    get:
+      operationId: src.controllers.get_all_cards
+      tags: [Cards]
+      summary: Obtiene el catálogo completo de cartas.
+      responses:
+        '200':
+          description: Lista de cartas del catálogo.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Card"
+    post:
+      operationId: src.controllers.add_card_to_catalog
+      tags: [Cards]
+      summary: Agrega una nueva carta al catálogo (Persistente).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCardInput"
+      responses:
+        '201':
+          description: Carta creada y persistida exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  card:
+                    $ref: "#/components/schemas/Card"
+        '403':
+          description: Acción no autorizada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # --- MARKETPLACE ---
+  /marketplace/listings:
+    get:
+      operationId: src.controllers.get_all_listings
+      tags: [Marketplace]
+      summary: Obtiene todas las publicaciones activas del marketplace
+      responses: { '200': { description: Lista de publicaciones } }
+    post:
+      operationId: src.controllers.publish_listing
+      tags: [Marketplace]
+      summary: Publica una nueva carta en el marketplace
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+        required: true
+      responses: { '201': { description: Publicación exitosa } }
+
+  # --- SOPORTE ---
+  /support/ticket:
+    post:
+      operationId: src.controllers.submit_support_ticket
+      tags: [Support]
+      summary: Envía un ticket de soporte al administrador
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { name: { type: string }, email: { type: string }, subject: { type: string }, message: { type: string }, user_id: { type: string } } } 
+        required: true
+      responses: { '201': { description: Ticket recibido } }
+  
+  /support/faq:
+    get:
+      operationId: src.controllers.get_faq
+      tags: [Support]
+      summary: Obtiene la lista de preguntas frecuentes
+      responses: { '200': { description: Lista de FAQ } }
+
+  # --- NOTIFICACIONES ---
+  /user/notifications:
+    get:
+      operationId: src.controllers.get_user_notifications
+      tags: [User]
+      summary: Obtiene la lista de notificaciones para un usuario.
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses: 
+        '200': { description: Lista de notificaciones }
+        '400': { description: ID de usuario requerido }
+
+components:
+  schemas:
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID de catálogo único.
+        name:
+          type: string
+        image:
+          type: string
+        rarity:
+          type: string
+        color:
+          type: string
+        type:
+          type: string
+        set:
+          type: string
+        description:
+          type: string
+        price:
+          type: integer
+          format: int32
+          description: Precio en la unidad más pequeña de moneda (ej. centavos).
+        manaCoat:
+          type: integer
+          description: Costo de maná.
+      required:
+        - id
+        - name
+        - price
+
+    NewCardInput:
+      type: object
+      properties:
+        name:
+          type: string
+        image:
+          type: string
+        rarity:
+          type: string
+        color:
+          type: string
+        type:
+          type: string
+        set:
+          type: string
+        description:
+          type: string
+        price:
+          type: integer
+          format: int32
+        manaCoat:
+          type: integer
+      required:
+        - name
+        - price
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Mensaje de error detallado.
+      required:
+        - error

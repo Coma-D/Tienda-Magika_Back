@@ -1,0 +1,62 @@
+[
+  {
+    "id": "1",
+    "name": "Lightning Bolt",
+    "image": "/sp_res5myxp7z.jpg",
+    "rarity": "Common",
+    "color": "Red",
+    "type": "Spell",
+    "set": "Colección Básica 2024",
+    "description": "Hace 3 puntos de daño a cualquier objetivo.",
+    "price": 5990,
+    "manaCoat": 1
+  },
+  {
+    "id": "2",
+    "name": "Black Lotus",
+    "image": "/sp_res5myxp7z.jpg",
+    "rarity": "Legendary",
+    "color": "Colorless",
+    "type": "Artifact",
+    "set": "Alpha",
+    "description": "Agrega tres maná de cualquier un color a tu reserva de maná.",
+    "price": 250000000000000,
+    "manaCoat": 0
+  },
+  {
+    "id": "3",
+    "name": "Serra Angel",
+    "image": "/sp_res5myxp7z.jpg",
+    "rarity": "Rare",
+    "color": "White",
+    "type": "Creature",
+    "set": "Colección Básica 2024",
+    "description": "Vuela, vigilancia.",
+    "price": 12990,
+    "manaCoat": 5
+  },
+  {
+    "id": "4",
+    "name": "Counterspell",
+    "image": "/sp_res5myxp7z.jpg",
+    "rarity": "Uncommon",
+    "color": "Blue",
+    "type": "Land",
+    "set": "Legends",
+    "description": "Contrarresta el hechizo objetivo.",
+    "price": 8500,
+    "manaCoat": 2
+  },
+  {
+    "id": "5",
+    "name": "Giant Growth",
+    "image": "/sp_res5myxp7z.jpg",
+    "rarity": "Common",
+    "color": "Green",
+    "type": "Creature",
+    "set": "Colección Básica 2024",
+    "description": "La criatura objetivo obtiene +3/+3 hasta el final del turno.",
+    "price": 2000,
+    "manaCoat": 1
+  }
+]
